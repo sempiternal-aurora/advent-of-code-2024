@@ -18,5 +18,9 @@
                     ]
                 );
             };
+
+            packages."x86_64-linux".default = pkgs.haskellPackages.developPackage {
+                root = ./.;
+            };
         };
 }
