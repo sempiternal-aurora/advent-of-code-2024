@@ -1,10 +1,18 @@
 module Main (main) where
 
+import System.Exit
 import Test.HUnit
 import AOC (getDay, Part(..))
 
-main :: IO Counts
-main = runTestTT tests
+main :: IO ()
+main = do
+  results <- runTestTT tests
+  if errors results + failures results == 0
+    then
+      exitSuccess
+    else
+      exitWith (ExitFailure 1)
+
 
 tests :: Test
 tests = TestList [day1aTest, day1bTest, day2aTest, day2bTest, day3aTest, day3bTest]

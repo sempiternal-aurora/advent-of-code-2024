@@ -1,6 +1,6 @@
 module AOC (getDay, Part(A, B)) where
 
-import Data.List (transpose, sort, (!?))
+import Data.List (transpose, sort)
 import Control.Arrow
 import Text.ParserCombinators.ReadP
 import Data.Char
@@ -11,9 +11,9 @@ data Part = A | B
 functions :: [(String -> Int, String -> Int)]
 functions = [(day1a, day1b), (day2a, day2b), (day3a, day3b)]
 
-getDay :: Int -> Part -> Maybe (String -> Int)
-getDay n A = fst (functions !? (n-1))
-getDay n B = snd $ (!?) functions $ n-1
+getDay :: Int -> Part -> String -> Int
+getDay n A = fst $ (!!) functions $ n-1
+getDay n B = snd $ (!!) functions $ n-1
 
 parseDay1Lists :: String -> ([Int], [Int])
 parseDay1Lists = (head &&& (head . tail)) . 
