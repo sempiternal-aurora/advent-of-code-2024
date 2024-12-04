@@ -1,6 +1,6 @@
 module AOC (getDay, Part(A, B)) where
 
-import Data.List (transpose, sort)
+import Data.List
 import Control.Arrow
 import Text.ParserCombinators.ReadP
 import Data.Char
@@ -9,30 +9,29 @@ data Part = A | B
     deriving (Show, Read, Eq)
 
 functions :: [(String -> Int, String -> Int)]
-functions = [(day1a, day1b), (day2a, day2b), (day3a, day3b)]
+functions = [(day1a, day1b), (day2a, day2b), (day3a, day3b), (day4a, day4b)]
 
 getDay :: Int -> Part -> String -> Int
 getDay n A = fst $ (!!) functions $ n-1
 getDay n B = snd $ (!!) functions $ n-1
 
 parseDay1Lists :: String -> ([Int], [Int])
-parseDay1Lists = (head &&& (head . tail)) . 
-                 map sort . 
+parseDay1Lists = (head &&& (head . tail)) .
+                 map sort .
                  transpose .
                  parseNumLineLists
 
 parseNumLineLists :: String -> [[Int]]
 parseNumLineLists = map (map read . words) . lines
 
-
 day1a :: String -> Int
-day1a = sum . 
+day1a = sum .
         map abs .
-        uncurry (zipWith (-)) . 
+        uncurry (zipWith (-)) .
         parseDay1Lists
 
 day1b :: String -> Int
-day1b = sum . 
+day1b = sum .
         (\(xs, ys) -> map (\x -> (*) x $ length $ filter (==x) ys) xs) .
         parseDay1Lists
 
@@ -40,10 +39,10 @@ day2a :: String -> Int
 day2a = length . filter day2aPred . parseNumLineLists
 
 day2aPred :: [Int] -> Bool
-day2aPred = uncurry (&&) . 
-            first (uncurry (||)) . 
-            ((all (>0) &&& all (<0)) &&& all ((<=3) . abs)) . 
-            uncurry (zipWith (-)) . 
+day2aPred = uncurry (&&) .
+            first (uncurry (||)) .
+            ((all (>0) &&& all (<0)) &&& all ((<=3) . abs)) .
+            uncurry (zipWith (-)) .
             (id &&& tail)
 
 day2b :: String -> Int
@@ -55,14 +54,14 @@ day2bPred = let
             []      -> []
             (x:xs) -> (:) xs $ map (x:) $ filterHelp xs
     in
-    any 
-    (   uncurry (&&) . 
-        first (uncurry (||)) . 
+    any
+    (   uncurry (&&) .
+        first (uncurry (||)) .
         ((all (>0) &&& all (<0)) &&& all ((<=3) . abs)) .
         uncurry (zipWith (-)) .
         (id &&& tail)
-    ) . 
-    uncurry (:) . 
+    ) .
+    uncurry (:) .
     (id &&& filterHelp)
 
 
@@ -107,4 +106,64 @@ don'tParser = Don't <$ string "don't()"
 doParser :: ReadP Day3ASM
 doParser = Do <$ string "do()"
 
+day4a :: String -> Int
+day4a = sum . map (sum . map test) . (trans <*>) . pure . lines
+    where
+        trans :: [[String] -> [String]]
+        trans = [ id, transpose, shear, shear . map reverse]
+        
+        test :: String -> Int
+        test xs@('X':'M':'A':'S':_) = 1 + test (tail xs)
+        test xs@('S':'A':'M':'X':_) = 1 + test (tail xs)
+        test (_:xs)                 = test xs
+        test []                     = 0
+    
+shear :: [[a]] -> [[a]]
+shear = foldr zipConsSkew []
 
+zipConsSkew :: [a] -> [[a]] -> [[a]]
+zipConsSkew xt yss =
+    uncurry (:) $
+    case xt of
+        x:xs    -> ([x], zipCons xs yss)
+        []      -> ([], yss)
+
+zipCons :: [a] -> [[a]] -> [[a]]
+zipCons (x:xs) (y:ys)   = (x:y):zipCons xs ys
+zipCons xs      []      = map (:[]) xs
+zipCons []      ys      = ys
+
+day4b :: String -> Int
+day4b = sum . map (length . filter crossMasTest . (trans <*>)) . get3by3 . lines
+    where
+        trans :: [[String] -> [String]]
+        trans = [ id, transpose, reverse, reverse . transpose ]
+
+
+crossMasTest :: [String] -> Bool
+crossMasTest [x,y,z] = row1 && row2 && row3 
+    where
+        row1 = case x of
+            ['M',_,'M'] -> True
+            _           -> False
+        row2 = case y of
+            [_,'A',_]   -> True
+            _           -> False
+        row3 = case z of
+            ['S',_,'S'] -> True
+            _           -> False
+crossMasTest _          = False
+
+get3by3 :: [[Char]] -> [[[[Char]]]]
+get3by3 = foldr helper [[]]
+    where
+        helper :: [a] -> [[[[a]]]] -> [[[[a]]]]
+        helper xt yss = map (:[]) sliced : map (zipCons sliced) hd ++ tl
+            where
+                sliced  = slice 3 xt
+                (hd,tl) = splitAt 2 yss
+
+        slice :: Int -> [a] -> [[a]]
+        slice n ls@(_:xs) = take n ls : slice n xs
+        slice _ []        = []
+        
